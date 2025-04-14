@@ -1,77 +1,158 @@
 #include <stdio.h>
+#include <stdlib.h>
 
 int main()
 {
     int tabuleiro[10][10];
-    int navio1[3] = {3, 3, 3}, navio2[3] = {3, 3, 3};
-    int navioDiagonalPrincipal[3] = {3, 3, 3}, navioDiagonalSecundario[3] = {3, 3, 3};
+    int efeito[10][10]; // marca onde a habilidade atingiu
 
-    for (int linha = 0; linha < 10; linha++) // percorre linhas e colunas atribuindo o valor 0
+    int i, j;
+
+    // Inicializa tudo com 0
+    for (i = 0; i < 10; i++)
     {
-        for (int coluna = 0; coluna < 10; coluna++)
+        for (j = 0; j < 10; j++)
         {
-            tabuleiro[linha][coluna] = 0;
+            tabuleiro[i][j] = 0; // água
+            efeito[i][j] = 0;    // sem efeito ainda
         }
     }
 
-    if (tabuleiro[3][1] == 0 && tabuleiro[3][2] == 0 && tabuleiro[3][3] == 0) // validação horizontal das posições para não adicionar o navio em algum local que já tenha outro navio
-    {
-        tabuleiro[3][1] = navio1[0];
-        tabuleiro[3][2] = navio1[1];
-        tabuleiro[3][3] = navio1[2];
-    }
+    // Coloca navios com valor 3
+    tabuleiro[3][1] = 3;
+    tabuleiro[3][2] = 3;
+    tabuleiro[3][3] = 3;
 
-    if (tabuleiro[2][7] == 0 && tabuleiro[3][7] == 0 && tabuleiro[4][7] == 0) // validação vertical das posições para não adicionar o navio em algum local que já tenha outro navio
-    {
-        tabuleiro[2][7] = navio2[0];
-        tabuleiro[3][7] = navio2[1];
-        tabuleiro[4][7] = navio2[2];
-    }
+    tabuleiro[3][7] = 3;
+    tabuleiro[4][7] = 3;
+    tabuleiro[5][7] = 3;
 
-    for (int linha = 0; linha <= 7; linha++) // adiciona navio na diagonal secundária. Percorre apenas 7 linhas para respeitar o espaço do 10 x 10 + o navio
+    // Matriz da habilidade em cruz
+    int cruz[5][5];
+    for (i = 0; i < 5; i++)
     {
-        // Obtém as posições que eu preciso validar se há espaço nessa rodada do for
-        int coluna = 9 - linha;
-        int linha2 = linha + 1;
-        int coluna2 = 9 - linha2;
-        int linha3 = linha + 2;
-        int coluna3 = 9 - linha3;
-
-        if (tabuleiro[linha][coluna] == 0 && tabuleiro[linha2][coluna2] == 0 && tabuleiro[linha3][coluna3] == 0) // valida na sequência se 3 campos estão vazio para poder adicionar o navio
+        for (j = 0; j < 5; j++)
         {
-            tabuleiro[linha][coluna] = navioDiagonalSecundario[0];
-            tabuleiro[linha2][coluna2] = navioDiagonalSecundario[1];
-            tabuleiro[linha3][coluna3] = navioDiagonalSecundario[2];
-            break;
+            if (i == 2 || j == 2)
+                cruz[i][j] = 1;
+            else
+                cruz[i][j] = 0;
         }
     }
 
-    for (int linha = 0; linha <= 7; linha++) // adiciona navio na diagonal principal. Percorre apenas 7 linhas para respeitar o espaço do 10 x 10 + o navio
+    // Matriz do cone (tipo pirâmide pra baixo)
+    int cone[5][5];
+    for (i = 0; i < 5; i++)
     {
-        // Obtém as posições que eu preciso validar se há espaço nessa rodada do for
-        int coluna = linha;
-        int linha2 = linha + 1;
-        int coluna2 = linha2;
-        int linha3 = linha + 2;
-        int coluna3 = linha3;
-
-        if (tabuleiro[linha][coluna] == 0 && tabuleiro[linha2][coluna2] == 0 && tabuleiro[linha3][coluna3] == 0) // valida na sequência se 3 campos estão vazio para poder adicionar o navio
+        for (j = 0; j < 5; j++)
         {
-            tabuleiro[linha][coluna] = navioDiagonalPrincipal[0];
-            tabuleiro[linha2][coluna2] = navioDiagonalPrincipal[1];
-            tabuleiro[linha3][coluna3] = navioDiagonalPrincipal[2];
-            break;
+            if ((i == 0 && j == 2) || (i == 1 && j >= 1 && j <= 3) || (i == 2 && j >= 0 && j <= 4))
+                cone[i][j] = 1;
+            else
+                cone[i][j] = 0;
         }
     }
 
-    printf("   A B C D E F G H I J\n"); // exibição do tabuleiro e as posições dos navios
-
-    for (int linha = 0; linha < 10; linha++)
+    // Matriz do octaedro (losango)
+    int octaedro[5][5];
+    for (i = 0; i < 5; i++)
     {
-        printf("%i  ", linha + 1);
-        for (int coluna = 0; coluna < 10; coluna++)
+        for (j = 0; j < 5; j++)
         {
-            printf("%i ", tabuleiro[linha][coluna]);
+            if (abs(i - 2) + abs(j - 2) <= 2)
+                octaedro[i][j] = 1;
+            else
+                octaedro[i][j] = 0;
+        }
+    }
+
+    // Aplica habilidade cone no (2,2)
+    int origemLinha = 2;
+    int origemColuna = 2;
+
+    for (i = 0; i < 5; i++)
+    {
+        for (j = 0; j < 5; j++)
+        {
+            int linha = origemLinha + i - 2;
+            int coluna = origemColuna + j - 2;
+
+            if (linha >= 0 && linha < 10 && coluna >= 0 && coluna < 10)
+            {
+                if (cone[i][j] == 1)
+                {
+                    efeito[linha][coluna] = 1;
+                }
+            }
+        }
+    }
+
+    // Aplica cruz no (5,5)
+    origemLinha = 5;
+    origemColuna = 5;
+
+    for (i = 0; i < 5; i++)
+    {
+        for (j = 0; j < 5; j++)
+        {
+            int linha = origemLinha + i - 2;
+            int coluna = origemColuna + j - 2;
+
+            if (linha >= 0 && linha < 10 && coluna >= 0 && coluna < 10)
+            {
+                if (cruz[i][j] == 1)
+                {
+                    efeito[linha][coluna] = 1;
+                }
+            }
+        }
+    }
+
+    // Aplica octaedro no (7,7)
+    origemLinha = 7;
+    origemColuna = 7;
+
+    for (i = 0; i < 5; i++)
+    {
+        for (j = 0; j < 5; j++)
+        {
+            int linha = origemLinha + i - 2;
+            int coluna = origemColuna + j - 2;
+
+            if (linha >= 0 && linha < 10 && coluna >= 0 && coluna < 10)
+            {
+                if (octaedro[i][j] == 1)
+                {
+                    efeito[linha][coluna] = 1;
+                }
+            }
+        }
+    }
+
+    // Mostrar o tabuleiro
+    printf("Tabuleiro final:\n\n");
+
+    for (i = 0; i < 10; i++)
+    {
+        for (j = 0; j < 10; j++)
+        {
+
+            if (tabuleiro[i][j] == 3 && efeito[i][j] == 1)
+            {
+                printf("5 "); // navio atingido
+            }
+            else if (tabuleiro[i][j] == 3)
+            {
+                printf("3 "); // navio normal
+            }
+            else if (efeito[i][j] == 1)
+            {
+                printf("* "); // área da habilidade
+            }
+            else
+            {
+                printf("0 "); // água
+            }
         }
         printf("\n");
     }
